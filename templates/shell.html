@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>蜡烛燃烧 · 可视化学堂</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,400&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@500;700&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#FBF8F3;--surf:#fff;--soft:#F5F0E8;--ink:#2B2825;--mute:#6B6158;--faded:#A69E93;
+  --line:#E8E3DA;--accent:#B85C38;--ok:#4A7C59;--flame:#E08A3C;
+  --serif:"Noto Serif SC",serif;--sans:"Noto Sans SC",sans-serif;--en:"Fraunces",Georgia,serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--ink);font-family:var(--sans);overflow:hidden}
+.intro{position:fixed;inset:0;background:#14110E;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:opacity .8s}
+.intro.go{opacity:0;pointer-events:none}
+.intro b{font-family:var(--serif);font-size:42px;font-weight:500;color:#F7F3EB;letter-spacing:.08em}
+.intro i{font-family:var(--en);font-style:italic;color:#F7F3EB88;margin-top:14px}
+.intro s{margin-top:48px;color:#F7F3EB55;font-size:12px;letter-spacing:.16em;text-decoration:none}
+.app{height:100%;max-width:1680px;margin:0 auto;padding:18px 28px 20px;display:flex;flex-direction:column;opacity:0;transition:opacity .7s}
+.app.on{opacity:1}
+header{display:flex;justify-content:space-between;align-items:flex-end;padding-bottom:12px;border-bottom:1px solid var(--line);margin-bottom:16px}
+.mark{font-family:var(--en);font-size:11px;letter-spacing:.22em;color:var(--accent);text-transform:uppercase}
+h1{font-family:var(--serif);font-size:clamp(22px,2vw,34px);font-weight:500}
+.sub{font-family:var(--en);font-style:italic;color:var(--faded);font-size:14px}
+.main{flex:1;min-height:0;display:grid;grid-template-columns:1fr 400px;gap:20px}
+.stage,.card{background:var(--surf);border:1px solid var(--line);border-radius:14px}
+.stage{padding:16px 18px;display:flex;flex-direction:column;min-height:0;box-shadow:0 4px 16px #2b28250a}
+.stats{display:flex;justify-content:space-between;margin-bottom:10px;font-size:13px;color:var(--mute)}
+.stats b{font-family:var(--en);font-size:26px;color:var(--ink);margin-left:6px}
+.stats b.hit{color:var(--ok)}
+.desk{flex:1;min-height:220px;border-radius:12px;position:relative;overflow:hidden;
+  background:linear-gradient(#2A211C 0%,#1A1512 70%,#3A2E24 70%,#2C241C 100%)}
+.candles{position:absolute;left:0;right:0;bottom:32%;height:58%;display:flex;justify-content:space-evenly;align-items:flex-end;padding:0 8%}
+.can{width:72px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end}
+.flame{width:18px;height:28px;border-radius:50% 50% 45% 45%;background:radial-gradient(circle at 50% 70%,#fff6,#E08A3C 55%,#B85C38);
+  transform-origin:bottom;animation:flick 1.1s ease-in-out infinite;opacity:0}
+.flame.on{opacity:1}
+@keyframes flick{50%{transform:scaleY(.86) rotate(4deg)}}
+.wax{width:36px;border-radius:6px 6px 2px 2px;background:linear-gradient(#F3E2B0,#E8C36A);transition:height .45s}
+.base{width:52px;height:10px;border-radius:3px;background:#8C8274;margin-top:2px}
+.tag{font-family:var(--en);font-size:12px;color:#F7F3EB99;margin-top:6px}
+.eqline{position:absolute;left:8%;right:8%;height:1px;border-top:1px dashed #E08A3C99;pointer-events:none;display:none}
+.ruler{margin-top:12px}
+.ruler input{width:100%;accent-color:var(--accent)}
+.panel{display:flex;flex-direction:column;gap:10px;min-height:0;overflow:auto}
+.card{padding:14px 16px}
+.lbl{font-family:var(--en);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--faded);margin-bottom:8px}
+.q{font-family:var(--serif);font-size:15px;line-height:1.75}
+.hl,.em{font-family:var(--en);font-weight:600;color:var(--accent);font-size:17px}
+.em-r{font-family:var(--en);font-weight:600;color:#C47A5A;font-size:17px}
+.em-g{font-family:var(--en);font-weight:600;color:var(--ok);font-size:17px}
+.methods{display:none;gap:4px;background:var(--soft);padding:4px;border-radius:10px}
+.methods.on{display:flex}
+.methods button,.tabs button,.go{border:0;cursor:pointer;font-family:var(--sans)}
+.methods button{flex:1;padding:8px 4px;border-radius:7px;background:transparent;color:var(--mute);font-size:12px}
+.methods button.on{background:var(--surf);color:var(--ink);box-shadow:0 1px 2px #0001}
+.teacher{background:#2B2825;color:#F7F3EB;border:0}
+.teacher .lbl{color:#F7F3EB66}
+.msg{font-family:var(--serif);font-size:15px;line-height:1.8;min-height:52px}
+.go{width:100%;margin-top:12px;padding:12px;border-radius:10px;background:#F7F3EB;color:var(--ink);font-size:14px;display:none}
+.go.show{display:block}
+.ans{display:none;border-color:#4a7c5944;background:#4a7c590c}
+.ans.on{display:block}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.cell{text-align:center;padding:10px;background:var(--surf);border-radius:10px}
+.cell b{display:block;font-family:var(--en);font-size:28px;color:var(--ok)}
+.tabs{display:flex;gap:4px;background:var(--soft);padding:5px;border-radius:12px;border:1.5px solid var(--line)}
+.tabs button{flex:1;padding:8px 6px;border-radius:8px;background:transparent;color:var(--mute);font-size:13px}
+.tabs button.on{background:var(--ink);color:var(--bg)}
+.sliders label{display:flex;justify-content:space-between;font-size:13px;margin:8px 0 4px}
+.create{display:none}.create.on{display:block}
+@media(max-width:900px){html,body{overflow:auto;height:auto}.app{height:auto}.main{grid-template-columns:1fr}.stage{min-height:380px}}
+</style>
+</head>
+<body>
+<div class="intro" id="intro"><b>蜡烛燃烧</b><i>two candles, one time</i><s>轻触任意处</s></div>
+<div class="app" id="app">
+  <header>
+    <div><div class="mark">Grades 4–8</div><h1>蜡烛燃烧</h1></div>
+    <div class="sub">— a classic rate problem</div>
+  </header>
+  <div class="main">
+    <section class="stage">
+      <div class="stats">
+        <span>时刻 <b id="tNow">0</b> 小时</span>
+        <span>甲剩 <b id="rA">24</b> cm</span>
+        <span>乙剩 <b id="rB">16</b> cm</span>
+      </div>
+      <div class="desk">
+        <div class="eqline" id="eqline"></div>
+        <div class="candles">
+          <div class="can"><div class="flame" id="flA"></div><div class="wax" id="waxA"></div><div class="base"></div><div class="tag">甲</div></div>
+          <div class="can"><div class="flame" id="flB"></div><div class="wax" id="waxB"></div><div class="base"></div><div class="tag">乙</div></div>
+        </div>
+      </div>
+      <div class="ruler"><input type="range" id="time" min="0" max="8" step="0.05" value="0"/></div>
+    </section>
+    <aside class="panel">
+      <div class="card"><div class="lbl">The Problem</div><p class="q" id="q"></p></div>
+      <div class="methods" id="methods">
+        <button class="on" data-m="unit">单位时间</button>
+        <button data-m="eq">方程</button>
+        <button data-m="gap">速度差</button>
+      </div>
+      <div class="card teacher">
+        <div class="lbl">Guide · 小老师</div>
+        <p style="font-family:var(--serif);margin-bottom:8px">阿临</p>
+        <p class="msg" id="msg"></p>
+        <button class="go" id="next">开始演示</button>
+      </div>
+      <div class="card ans" id="ans">
+        <div class="lbl" style="color:var(--ok)">The Answer</div>
+        <div class="grid">
+          <div class="cell">时刻（小时）<b id="ansT">—</b></div>
+          <div class="cell">那时各剩 cm<b id="ansR">—</b></div>
+        </div>
+      </div>
+      <div class="card create" id="create">
+        <div class="lbl">出题</div>
+        <div class="sliders">
+          <label>甲高 <span id="cAh">24</span></label><input type="range" id="sAh" min="8" max="40" value="24"/>
+          <label>甲小时 <span id="cAt">6</span></label><input type="range" id="sAt" min="2" max="12" value="6"/>
+          <label>乙高 <span id="cBh">16</span></label><input type="range" id="sBh" min="6" max="36" value="16"/>
+          <label>乙小时 <span id="cBt">8</span></label><input type="range" id="sBt" min="2" max="14" value="8"/>
+        </div>
+      </div>
+      <nav class="tabs">
+        <button class="on" data-mode="explore">自由探索</button>
+        <button data-mode="teach">跟我学</button>
+        <button data-mode="challenge">闯关</button>
+        <button data-mode="create">出题</button>
+      </nav>
+    </aside>
+  </div>
+</div>
+<script>
+const PROBLEM = {
+  titleCN:'蜡烛燃烧',
+  actors:[
+    {id:'jia',name:'甲',height:24,burnHours:6},
+    {id:'yi', name:'乙',height:16,burnHours:8}
+  ],
+  statement:'甲蜡烛高 <span class="hl">{0}</span> cm，<span class="hl">{1}</span> 小时燃尽；乙蜡烛高 <span class="hl">{2}</span> cm，<span class="hl">{3}</span> 小时燃尽。同时点燃，多久后一样高？'
+};
+function solveFor(P){
+  const A=P.actors[0],B=P.actors[1];
+  const rateA=A.height/A.burnHours, rateB=B.height/B.burnHours;
+  const tEqual=(A.height-B.height)/(rateA-rateB);
+  const remain=A.height-rateA*tEqual;
+  return {rateA,rateB,tEqual,remain,heightGap0:A.height-B.height,rateDiff:rateA-rateB,
+    maxHours:Math.max(A.burnHours,B.burnHours),
+    valid:Number.isFinite(tEqual)&&tEqual>0&&remain>=-1e-9&&tEqual<=A.burnHours&&tEqual<=B.burnHours};
+}
+let P=PROBLEM, S=solveFor(P);
+const state={mode:'explore',method:'unit',t:0,step:0,run:0,lit:false};
+
+const $=id=>document.getElementById(id);
+const timeEl=$('time'), msg=$('msg'), next=$('next'), ans=$('ans');
+
+function remain(actor,t){return Math.max(0, actor.height - (actor.height/actor.burnHours)*t)}
+function paint(){
+  const a=P.actors[0],b=P.actors[1];
+  const ra=remain(a,state.t), rb=remain(b,state.t);
+  const maxH=Math.max(a.height,b.height);
+  $('waxA').style.height=(18+ra/maxH*150)+'px';
+  $('waxB').style.height=(18+rb/maxH*150)+'px';
+  $('flA').classList.toggle('on', state.lit && ra>0.05);
+  $('flB').classList.toggle('on', state.lit && rb>0.05);
+  $('tNow').textContent=state.t.toFixed(state.t%1?2:0);
+  $('rA').textContent=ra.toFixed(ra%1?1:0);
+  $('rB').textContent=rb.toFixed(rb%1?1:0);
+  const hit=state.t>0 && Math.abs(ra-rb)<0.15 && ra>0.05;
+  ['tNow','rA','rB'].forEach(id=>$(id).classList.toggle('hit',hit));
+  const top=32 + (1-ra/maxH)*58;
+  $('eqline').style.display=hit?'block':'none';
+  $('eqline').style.bottom=(32+(ra/maxH)*58)+'%';
+  if(hit && (state.mode==='explore'||state.mode==='challenge')) showAns();
+}
+function showAns(){
+  ans.classList.add('on');
+  $('ansT').textContent=S.tEqual;
+  $('ansR').textContent=S.remain;
+}
+function say(html){msg.innerHTML=html}
+function qtext(){
+  const a=P.actors[0],b=P.actors[1];
+  $('q').innerHTML=P.statement.replace('{0}',a.height).replace('{1}',a.burnHours).replace('{2}',b.height).replace('{3}',b.burnHours);
+}
+function setT(t,lit=true){
+  state.t=Math.max(0,Math.min(S.maxHours,t));
+  state.lit=lit && state.t>0 || lit;
+  timeEl.value=state.t;
+  paint();
+}
+
+function setMode(mode){
+  state.mode=mode; state.step=0; state.run++; ans.classList.remove('on');
+  document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.mode===mode));
+  $('methods').classList.toggle('on',mode==='teach');
+  $('create').classList.toggle('on',mode==='create');
+  timeEl.disabled=mode==='teach';
+  next.classList.toggle('show',mode==='teach');
+  if(mode==='explore'){
+    P=PROBLEM; S=solveFor(P); bindSlider(); qtext();
+    setT(0,false);
+    say(`拖下面的时间轴，看两支蜡烛怎么矮下去。能找到它们一样高的时刻吗？`);
+  }else if(mode==='teach'){
+    P=PROBLEM; S=solveFor(P); bindSlider(); qtext();
+    setT(0,false); startMethod();
+  }else if(mode==='challenge'){
+    const tStar=2+Math.floor(Math.random()*5);
+    const rateA=3+Math.floor(Math.random()*4);
+    const rateB=1+Math.floor(Math.random()*(rateA-1));
+    const remain=2+Math.floor(Math.random()*5)*2;
+    P={...PROBLEM,actors:[
+      {id:'jia',name:'甲',height:remain+rateA*tStar,burnHours:(remain+rateA*tStar)/rateA},
+      {id:'yi',name:'乙',height:remain+rateB*tStar,burnHours:(remain+rateB*tStar)/rateB}
+    ]};
+    S=solveFor(P); bindSlider(); qtext(); setT(0,false);
+    say(`新题。只给你高和燃尽时间 —— 拖到两支一样高。`);
+  }else{
+    qtext(); say(`拖滑杆出题。只有你知道答案。`);
+    syncCreate();
+  }
+}
+function bindSlider(){
+  timeEl.max=S.maxHours; timeEl.step=S.maxHours>6?0.1:0.05;
+}
+function startMethod(){
+  state.step=0; next.disabled=false;
+  const A=P.actors[0].name,B=P.actors[1].name;
+  if(state.method==='unit'){ say(`先别列式。看：每只蜡烛每小时烧掉多少？`); next.textContent='先算每小时烧掉多少'; }
+  if(state.method==='eq'){ say(`设过了 <span class="em">t</span> 小时。甲剩 ${P.actors[0].height} − ${S.rateA}t，乙剩 ${P.actors[1].height} − ${S.rateB}t。`); next.textContent='令它们相等'; }
+  if(state.method==='gap'){ say(`一开始甲比乙高 <span class="em">${S.heightGap0}</span> cm。谁消得更快？`); next.textContent='看高差怎么缩'; }
+}
+async function step(){
+  const my=++state.run; const wait=ms=>new Promise(r=>setTimeout(r,ms));
+  state.step++; next.disabled=true;
+  if(state.method==='unit'){
+    if(state.step===1){
+      say(`甲每小时 <span class="em">${S.rateA}</span> cm，乙每小时 <span class="em-r">${S.rateB}</span> cm。点燃，一小时一小时走。`);
+      next.textContent='让时间走起来 →'; next.disabled=false;
+    }else if(state.step===2){
+      for(let h=1;h<=S.tEqual;h++){
+        if(my!==state.run)return;
+        setT(h,true); say(`过了 <span class="em">${h}</span> 小时 —— 甲剩 ${remain(P.actors[0],h)}，乙剩 ${remain(P.actors[1],h)}。`);
+        await wait(700); if(my!==state.run)return;
+      }
+      say(`<span class="em-g">${S.tEqual}</span> 小时后，两支都剩 <span class="em-g">${S.remain}</span> cm。`);
+      showAns(); next.classList.remove('show');
+    }
+  }else if(state.method==='eq'){
+    if(state.step===1){
+      say(`${P.actors[0].height} − ${S.rateA}t = ${P.actors[1].height} − ${S.rateB}t <br>→ t = <span class="em-g">${S.tEqual}</span>`);
+      next.textContent='拨到这个时刻看看'; next.disabled=false;
+    }else{
+      setT(S.tEqual,true);
+      say(`画面上两焰齐平。方程和眼睛，同一个点。`);
+      showAns(); next.classList.remove('show');
+    }
+  }else{
+    if(state.step===1){
+      say(`甲每小时多消 <span class="em">${S.rateDiff}</span> cm。追上 ${S.heightGap0} cm 要 <span class="em-g">${S.heightGap0} ÷ ${S.rateDiff} = ${S.tEqual}</span> 小时。`);
+      next.textContent='看高差缩到 0'; next.disabled=false;
+    }else{
+      setT(S.tEqual,true);
+      say(`高差没了。还是 <span class="em-g">${S.tEqual}</span> 小时，各剩 <span class="em-g">${S.remain}</span>。`);
+      showAns(); next.classList.remove('show');
+    }
+  }
+}
+
+$('intro').onclick=()=>{$('intro').classList.add('go');$('app').classList.add('on');setMode('explore')};
+timeEl.oninput=e=>{if(state.mode!=='teach') setT(parseFloat(e.target.value),true)};
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>setMode(b.dataset.mode));
+document.querySelectorAll('.methods button').forEach(b=>b.onclick=()=>{
+  state.method=b.dataset.m; state.run++;
+  document.querySelectorAll('.methods button').forEach(x=>x.classList.toggle('on',x===b));
+  setT(0,false); ans.classList.remove('on'); startMethod(); next.classList.add('show');
+});
+next.onclick=step;
+function syncCreate(){
+  const a={id:'jia',name:'甲',height:+$('sAh').value,burnHours:+$('sAt').value};
+  const b={id:'yi',name:'乙',height:+$('sBh').value,burnHours:+$('sBt').value};
+  $('cAh').textContent=a.height; $('cAt').textContent=a.burnHours;
+  $('cBh').textContent=b.height; $('cBt').textContent=b.burnHours;
+  P={...PROBLEM,actors:[a,b]}; S=solveFor(P); bindSlider(); qtext(); setT(0,true);
+  say(S.valid?`这题会在 <span class="em">${S.tEqual}</span> 小时后一样高，各剩 ${S.remain}。（别告诉他们）`:`这组数没有正的交点。`);
+}
+['sAh','sAt','sBh','sBt'].forEach(id=>$(id).oninput=syncCreate);
+qtext(); bindSlider(); paint();
+</script>
+</body>
+</html>
