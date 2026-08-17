@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>可视化学堂</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;1,9..144,400&family=Noto+Sans+SC:wght@400;700&family=Noto+Serif+SC:wght@500;700&display=swap" rel="stylesheet"/>
+<style>
+:root{--bg:#FBF8F3;--surf:#fff;--soft:#F5F0E8;--ink:#2B2825;--mute:#6B6158;--faded:#A69E93;--line:#E8E3DA;--accent:#B85C38;--ok:#4A7C59;--flame:#E08A3C;--paper:#F7F3EB;--serif:"Noto Serif SC",serif;--sans:"Noto Sans SC",sans-serif;--en:"Fraunces",Georgia,serif}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--ink);font-family:var(--sans)}
+@media(min-width:901px){html,body{overflow:hidden}}
+.intro{position:fixed;inset:0;background:#14110E;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:opacity .7s}
+.intro.go{opacity:0;pointer-events:none}
+.intro b{font-family:var(--serif);font-size:clamp(32px,6vw,52px);font-weight:500;color:var(--paper)}
+.intro i{font-family:var(--en);font-style:italic;color:#F7F3EB88;margin-top:12px}
+.intro s{margin-top:48px;color:#F7F3EB55;font-size:12px;letter-spacing:.18em;text-decoration:none}
+.app{height:100%;max-width:1680px;margin:0 auto;padding:16px 24px;display:flex;flex-direction:column;opacity:0;transition:opacity .6s}
+.app.on{opacity:1}
+header{display:flex;justify-content:space-between;align-items:flex-end;padding-bottom:12px;border-bottom:1px solid var(--line);margin-bottom:14px}
+.mark{font-family:var(--en);font-size:11px;letter-spacing:.22em;color:var(--accent);text-transform:uppercase}
+h1{font-family:var(--serif);font-size:clamp(22px,2.4vw,34px);font-weight:500}
+.sub{font-family:var(--en);font-style:italic;color:var(--faded)}
+.main{flex:1;min-height:0;display:grid;grid-template-columns:1fr 380px;gap:16px}
+.stage,.card{background:var(--surf);border:1px solid var(--line);border-radius:14px}
+.stage{padding:16px;display:flex;flex-direction:column;min-height:320px}
+.stats{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px;font-size:13px;color:var(--mute)}
+.stats b{font-family:var(--en);font-size:24px;color:var(--ink);margin-left:4px}
+.stats b.hit{color:var(--ok)}
+.board{flex:1;min-height:220px;border-radius:12px;position:relative;overflow:hidden;background:var(--soft)}
+.axis{display:flex;align-items:center;padding:0 8%}
+.road{width:100%;height:8px;background:var(--line);border-radius:99px;position:relative}
+.tok{position:absolute;top:50%;transform:translate(-50%,-50%);padding:6px 12px;border-radius:99px;color:var(--paper);font-family:var(--serif);font-size:14px;transition:left .45s}
+.tok.a{background:var(--accent)}
+.tok.b{background:var(--ink)}
+.bars{display:flex;align-items:flex-end;justify-content:space-evenly;background:#2A211C;padding:24px 8% 28px}
+.bar{width:40px;border-radius:6px 6px 2px 2px;background:#E8C36A;transition:height .45s}
+.bar.b{background:#E8D4C7}
+.tag{text-align:center;color:#F7F3EB99;font-family:var(--en);font-size:12px;margin-top:8px}
+.grid{display:grid;grid-template-columns:repeat(8,1fr);gap:8px;padding:16px;align-content:start}
+.dot{aspect-ratio:1;border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--en);font-size:11px}
+.dot.a{background:#E8C36A}
+.dot.b{background:#E8D4C7;color:var(--accent)}
+.pm{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.pm div{display:flex;justify-content:space-between;align-items:center;background:var(--soft);border-radius:10px;padding:8px 12px}
+.pm button{width:36px;height:36px;border:0;border-radius:8px;background:var(--surf);font-size:18px;cursor:pointer}
+input[type=range]{width:100%;margin-top:12px;accent-color:var(--accent)}
+.panel{display:flex;flex-direction:column;gap:10px;min-height:0;overflow:auto}
+.card{padding:14px 16px}
+.lbl{font-family:var(--en);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--faded);margin-bottom:8px}
+.q{font-family:var(--serif);font-size:15px;line-height:1.7}
+.hl{font-family:var(--en);font-weight:600;color:var(--accent);font-size:17px}
+.methods{display:none;gap:4px;background:var(--soft);padding:4px;border-radius:10px}
+.methods.on{display:flex}
+.methods button,.tabs button,.go{border:0;cursor:pointer;font-family:var(--sans)}
+.methods button{flex:1;padding:8px 4px;border-radius:7px;background:transparent;color:var(--mute);font-size:12px}
+.methods button.on{background:var(--surf);color:var(--ink)}
+.teacher{background:var(--ink);color:var(--paper);border:0}
+.teacher .lbl{color:#F7F3EB66}
+.msg{font-family:var(--serif);font-size:15px;line-height:1.8;min-height:52px}
+.go{width:100%;margin-top:12px;padding:12px;border-radius:10px;background:var(--paper);color:var(--ink);display:none}
+.go.show{display:block}
+.ans{display:none;border-color:#4a7c5944;background:#4a7c590c}
+.ans.on{display:block}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cell{text-align:center;padding:10px;background:var(--surf);border-radius:10px}
+.cell b{display:block;font-family:var(--en);font-size:28px;color:var(--ok)}
+.tabs{display:flex;gap:4px;background:var(--soft);padding:5px;border-radius:12px;border:1.5px solid var(--line)}
+.tabs button{flex:1;padding:8px 4px;border-radius:8px;background:transparent;color:var(--mute);font-size:13px}
+.tabs button.on{background:var(--ink);color:var(--bg)}
+@media(max-width:900px){html,body{height:auto}.app{height:auto}.main{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="intro" id="intro"><b id="it">讲题</b><i id="ie"></i><s>轻触任意处</s></div>
+<div class="app" id="app">
+  <header>
+    <div><div class="mark" id="ch">Grades 4–8</div><h1 id="h1"></h1></div>
+    <div class="sub" id="sub"></div>
+  </header>
+  <div class="main">
+    <section class="stage">
+      <div class="stats" id="stats"></div>
+      <div class="board" id="board"></div>
+      <div id="ctrl"></div>
+    </section>
+    <aside class="panel">
+      <div class="card"><div class="lbl">The Problem</div><p class="q" id="q"></p></div>
+      <div class="methods" id="methods"></div>
+      <div class="card teacher">
+        <div class="lbl">Guide · 小老师</div>
+        <p style="font-family:var(--serif);margin-bottom:8px">阿临</p>
+        <p class="msg" id="msg"></p>
+        <button class="go" id="next">开始</button>
+      </div>
+      <div class="card ans" id="ans"></div>
+      <nav class="tabs" id="tabs">
+        <button class="on" data-m="explore">自由探索</button>
+        <button data-m="teach">跟我学</button>
+        <button data-m="challenge">闯关</button>
+      </nav>
+    </aside>
+  </div>
+</div>
+<script>
+/* ===== 只改下面这份 CARD，上面下面都不要动 ===== */
+const CARD = {
+  stage: "axis",
+  title: "两车相遇",
+  titleEn: "two cars, one road",
+  chapter: "Grades 4–8",
+  unit: "千米",
+  statement: "甲乙两地相距 {distance} 千米。{a.name}每小时 {a.rate} 千米，{b.name}每小时 {b.rate} 千米，同时相对开出。几小时相遇？",
+  actors: [
+    { name: "甲车", start: 0, rate: 80 },
+    { name: "乙车", start: 480, rate: -40 }
+  ],
+  explore: "拖时间。两车从两端开来，找到它们碰上的时刻。",
+  methods: [
+    {
+      name: "速度和",
+      steps: [
+        { say: "相向而行，每小时靠近 {rateSum} 千米。全程 {distance}。", next: "看一小时后在哪", t: 0 },
+        { say: "一小时后还剩一段。", next: "走到相遇", t: 1 },
+        { say: "{tEqual} 小时后，在 {meet} 千米处碰上。", t: "equal", reveal: true }
+      ]
+    },
+    {
+      name: "方程",
+      steps: [
+        { say: "{a.name}走 {a.rate}t，{b.name}走 {b.rate}t，加起来等于 {distance}。", next: "解出 t", t: 0 },
+        { say: "t = {tEqual}。拨过去，两车重叠。", t: "equal", reveal: true }
+      ]
+    }
+  ]
+};
+/* ===== CARD 结束 ===== */
+
+function pretty(n){if(!Number.isFinite(n))return"—";const r=Math.round(n*1000)/1000;return Number.isInteger(r)?String(r):String(r)}
+function qty(a,t){return a.start+a.rate*t}
+function solve(C){
+  const [a,b]=C.actors;
+  if(C.stage==="grid"){
+    const H=C.heads,F=C.feet,la=a.legs||2,lb=b.legs||4;
+    const countA=(F-H*lb)/(la-lb),countB=H-countA;
+    return {countA,countB,heads:H,feet:F,tEqual:0,meet:0,remain:0,rateA:la,rateB:lb,rateSum:la+lb,distance:0,heightGap:lb-la,rateDiff:lb-la,maxHours:1};
+  }
+  const tEqual=(b.start-a.start)/(a.rate-b.rate);
+  const meet=qty(a,tEqual);
+  const distance=Math.abs(b.start-a.start);
+  const maxHours=C.stage==="bars"&&a.hours&&b.hours?Math.max(a.hours,b.hours):Math.max(tEqual*1.6,4);
+  return {tEqual,meet,remain:meet,rateA:Math.abs(a.rate),rateB:Math.abs(b.rate),rateSum:Math.abs(a.rate)+Math.abs(b.rate),distance,heightGap:distance,rateDiff:Math.abs(a.rate-b.rate),maxHours,countA:0,countB:0,heads:0,feet:0};
+}
+function interp(tpl,C,S){
+  const [a,b]=C.actors;
+  const map={"a.name":a.name,"a.start":pretty(a.start),"a.rate":pretty(Math.abs(a.rate)),"a.height":pretty(a.height??a.start),"a.hours":pretty(a.hours??0),"a.legs":pretty(a.legs??0),
+    "b.name":b.name,"b.start":pretty(b.start),"b.rate":pretty(Math.abs(b.rate)),"b.height":pretty(b.height??b.start),"b.hours":pretty(b.hours??0),"b.legs":pretty(b.legs??0),
+    rateA:pretty(S.rateA),rateB:pretty(S.rateB),rateSum:pretty(S.rateSum),tEqual:pretty(S.tEqual),remain:pretty(S.remain),meet:pretty(S.meet),
+    heightGap:pretty(S.heightGap),rateDiff:pretty(S.rateDiff),distance:pretty(S.distance),countA:pretty(S.countA),countB:pretty(S.countB),heads:pretty(S.heads),feet:pretty(S.feet)};
+  return tpl.replace(/\{([a-zA.]+)\}/g,(_,k)=>map[k]??_);
+}
+
+let C=CARD,S=solve(C);
+const state={mode:"explore",mi:0,si:0,t:0,ca:0,cb:0,rev:false};
+const $=id=>document.getElementById(id);
+function say(t){$("msg").innerHTML=t}
+function paint(){
+  const [a,b]=C.actors, st=C.stage;
+  const pa=qty(a,state.t), pb=qty(b,state.t);
+  const heads=state.ca+state.cb, feet=state.ca*(a.legs||2)+state.cb*(b.legs||4);
+  const hit=st==="grid"?heads===S.heads&&feet===S.feet:
+    state.t>0&&Math.abs(pa-pb)<(st==="axis"?Math.max(S.distance*0.02,0.8):0.25);
+  if(hit) state.rev=true;
+  if(st==="grid") $("stats").innerHTML=`<span>${a.name} <b class="${hit?"hit":""}">${state.ca}</b></span><span>${b.name} <b class="${hit?"hit":""}">${state.cb}</b></span><span>头 <b class="${heads===S.heads?"hit":""}">${heads}/${S.heads}</b></span><span>脚 <b class="${feet===S.feet?"hit":""}">${feet}/${S.feet}</b></span>`;
+  else $("stats").innerHTML=`<span>时刻 <b class="${hit?"hit":""}">${pretty(state.t)}</b></span><span>${a.name} <b class="${hit?"hit":""}">${pretty(pa)}</b> ${C.unit||""}</span><span>${b.name} <b class="${hit?"hit":""}">${pretty(pb)}</b> ${C.unit||""}</span>`;
+  const board=$("board");
+  if(st==="axis"){
+    const track=Math.max(Math.abs(a.start),Math.abs(b.start),Math.abs(pa),Math.abs(pb),S.distance,1);
+    const pct=v=>Math.max(4,Math.min(92,(v/track)*88+4));
+    board.className="board axis";
+    board.innerHTML=`<div class="road"><div class="tok a" style="left:${pct(pa)}%">${a.name}</div><div class="tok b" style="left:${pct(pb)}%">${b.name}</div></div>`;
+  }else if(st==="bars"){
+    const maxV=Math.max(a.start,b.start,1);
+    board.className="board bars";
+    board.innerHTML=`<div><div class="bar" style="height:${24+pa/maxV*160}px"></div><div class="tag">${a.name}</div></div><div><div class="bar b" style="height:${24+pb/maxV*160}px"></div><div class="tag">${b.name}</div></div>`;
+  }else{
+    board.className="board grid";
+    let html="";
+    for(let i=0;i<Math.min(state.ca,18);i++) html+=`<div class="dot a">${a.legs||2}</div>`;
+    for(let i=0;i<Math.min(state.cb,18);i++) html+=`<div class="dot b">${b.legs||4}</div>`;
+    board.innerHTML=html||"";
+  }
+  if(st==="grid"){
+    $("ctrl").innerHTML=`<div class="pm"><div>${a.name}<span><button data-i="0" data-d="-1">−</button> <button data-i="0" data-d="1">+</button></span></div><div>${b.name}<span><button data-i="1" data-d="-1">−</button> <button data-i="1" data-d="1">+</button></span></div></div>`;
+    $("ctrl").querySelectorAll("button").forEach(btn=>btn.onclick=()=>{
+      if(state.mode==="teach")return;
+      if(btn.dataset.i==="0") state.ca=Math.max(0,state.ca+ +btn.dataset.d);
+      else state.cb=Math.max(0,state.cb+ +btn.dataset.d);
+      paint();
+    });
+  }else{
+    $("ctrl").innerHTML=`<input type="range" id="time" min="0" max="${S.maxHours}" step="0.05" value="${state.t}" ${state.mode==="teach"?"disabled":""}/>`;
+    const sl=$("time"); if(sl) sl.oninput=e=>{state.t=+e.target.value;paint()};
+  }
+  $("q").innerHTML=interp(C.statement,C,S).replace(/(\d+(?:\.\d+)?)/g,'<span class="hl">$1</span>');
+  if(state.rev){
+    $("ans").className="card ans on";
+    $("ans").innerHTML=st==="grid"
+      ?`<div class="lbl" style="color:var(--ok)">The Answer</div><div class="grid2"><div class="cell">${a.name}<b>${S.countA}</b></div><div class="cell">${b.name}<b>${S.countB}</b></div></div>`
+      :`<div class="lbl" style="color:var(--ok)">The Answer</div><div class="grid2"><div class="cell">时刻<b>${pretty(S.tEqual)}</b></div><div class="cell">${st==="axis"?"相遇处":"那时"}<b>${pretty(S.meet)}</b></div></div>`;
+  }else $("ans").className="card ans";
+}
+function setMode(m){
+  state.mode=m;state.si=0;state.t=0;state.ca=0;state.cb=0;state.rev=false;
+  document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.m===m));
+  $("methods").className="methods"+(m==="teach"?" on":"");
+  $("next").className="go"+(m==="teach"?" show":"");
+  if(m==="challenge"){
+    if(C.stage==="grid"){
+      const aN=4+Math.floor(Math.random()*10), bN=3+Math.floor(Math.random()*8);
+      C={...CARD,heads:aN+bN,feet:aN*(CARD.actors[0].legs||2)+bN*(CARD.actors[1].legs||4)};
+    }else{
+      const t=2+Math.floor(Math.random()*4), rA=40+Math.floor(Math.random()*5)*10, rB=20+Math.floor(Math.random()*3)*10;
+      C={...CARD,actors:[{...CARD.actors[0],start:0,rate:rA},{...CARD.actors[1],start:(rA+rB)*t,rate:-rB}]};
+    }
+    S=solve(C); say("新数字。自己动手凑。");
+  }else{ C=CARD; S=solve(C); say(interp(C.explore,C,S)); }
+  if(m==="teach"){ state.mi=0; startM(); }
+  paint();
+}
+function startM(){
+  const m=C.methods[state.mi]; if(!m)return;
+  state.si=0; apply(m.steps[0]); say(interp(m.steps[0].say,C,S));
+  $("next").textContent=m.steps[0].next||"下一步"; $("next").className="go show";
+  [...$("methods").children].forEach((b,i)=>b.classList.toggle("on",i===state.mi));
+}
+function apply(st){
+  if(!st)return;
+  if(st.t==="equal") state.t=S.tEqual; else if(typeof st.t==="number") state.t=st.t;
+  if(st.a!=null) state.ca=st.a; if(st.b!=null) state.cb=st.b;
+  if(st.reveal) state.rev=true;
+}
+$("intro").onclick=()=>{
+  $("intro").classList.add("go"); $("app").classList.add("on");
+  $("it").textContent=CARD.title; $("ie").textContent=CARD.titleEn;
+  $("h1").textContent=CARD.title; $("sub").textContent="— "+CARD.titleEn; $("ch").textContent=CARD.chapter;
+  $("methods").innerHTML=CARD.methods.map((m,i)=>`<button class="${i===0?"on":""}" data-i="${i}">${m.name}</button>`).join("");
+  $("methods").onclick=e=>{const b=e.target.closest("button"); if(!b||state.mode!=="teach")return; state.mi=+b.dataset.i; startM(); paint();};
+  setMode("explore");
+};
+$("tabs").onclick=e=>{const b=e.target.closest("button"); if(b) setMode(b.dataset.m)};
+$("next").onclick=()=>{
+  const m=C.methods[state.mi]; if(!m)return;
+  const n=Math.min(state.si+1,m.steps.length-1); if(n===state.si)return;
+  state.si=n; apply(m.steps[n]); say(interp(m.steps[n].say,C,S));
+  $("next").textContent=m.steps[n].next||""; if(!m.steps[n].next) $("next").className="go";
+  paint();
+};
+$("it").textContent=CARD.title; $("ie").textContent=CARD.titleEn;
+</script>
+</body>
+</html>

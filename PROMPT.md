@@ -1,8 +1,6 @@
-读这个文件，只输出一份讲题卡 JSON，不要写网页：
+打开并复制这份模板，只改开头的 CARD，把完整 HTML 交回来（不要只交 JSON）：
 
-https://github.com/Aevitude/visual-math-classroom/blob/main/SKILL.md
+https://github.com/Aevitude/visual-math-classroom/blob/main/template.html
 
-客户现场出题：
+客户的题：
 （把题贴在这里）
-
-先选舞台 axis / bars / grid，再填卡。
