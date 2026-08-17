@@ -1,7 +1,5 @@
 # 可视化学堂 Skill
 
-给豆包：只让它读 `SKILL.md`（几十句话：颜色、字体、禁区和蜡烛题）。
+就一份说明：`SKILL.md`（颜色、字体、禁区、蜡烛题怎么做）。
 
-仓库：https://github.com/Aevitude/visual-math-classroom
-
-提示词见 `PROMPT.md`。
+发给豆包时，让它读 SKILL.md，做一节蜡烛燃烧课件。
